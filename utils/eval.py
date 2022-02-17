@@ -17,12 +17,17 @@ from process import DoulistFile, MovieFile
 from log_tool import data_process_logger as logger
 
 #VecFile = './models/fasttext_model_0804_09_cbow.vec'
-VecFile = './models/fasttext_model_0804_09_skipgram.vec'
+import os
+root_dir = os.path.dirname(__file__)
+VecFile = root_dir + '/../models/fasttext_model_0804_09_skipgram.vec'
 
-reload(sys)
-sys.setdefaultencoding('utf8')
+# import imp
+# imp.reload(sys)
 
 class minHeap():
+    '''
+    小顶堆
+    '''
     def __init__(self, k):
         self._k = k
         self._heap = []
@@ -46,22 +51,38 @@ class minHeap():
         return self._heap
 
 def similarity(v1, v2):
+    '''
+    向量相似
+    :param v1:
+    :param v2:
+    :return:
+    '''
     n1 = np.linalg.norm(v1)
     n2 = np.linalg.norm(v2)
     return np.dot(v1, v2) / n1 / n2
 
 def load_vectors(input_file=VecFile):
+    '''
+    从向量文件里加载向量
+
+    :param input_file:
+    :return:
+    '''
     vectors = {}
-    with open(VecFile) as fopen:
+    with open(input_file) as fopen:
         fopen.readline()
         for line in fopen:
             line_list = line.strip().split()
+
+            # </s>符号吧，其它的不得而知
             if not line_list[0].isdigit():
                 continue
+
             movie_id = int(line_list[0])
             vec = np.array([float(_) for _ in line_list[1:]], dtype=float)
             if not movie_id in vectors:
                 vectors[movie_id] = vec
+
     return vectors
 
 def topk_like(cur_movie_name, k=5, print_log=False):
@@ -72,7 +93,7 @@ def topk_like(cur_movie_name, k=5, print_log=False):
     like_candidates = []
     #logger.debug('vecotrs size=%d' % (len(vectors)))
     #logger.debug('cur_movie_name %s, %s' % (cur_movie_name, type(cur_movie_name)))
-    if isinstance(cur_movie_name, unicode):
+    if isinstance(cur_movie_name, str):
         cur_movie_name = cur_movie_name.encode('utf8')
 
     if cur_movie_name not in movie_name_id_dict:
@@ -87,7 +108,7 @@ def topk_like(cur_movie_name, k=5, print_log=False):
     cur_vec = vectors[cur_movie_id]
     if print_log:
         logger.info('[%d]%s top %d likes:' % (cur_movie_id, cur_movie_name, k))
-    for movie_id, vec in vectors.iteritems():
+    for movie_id, vec in vectors.items():
         if movie_id == cur_movie_id:
             continue
         sim = similarity(cur_vec, vec)
@@ -133,7 +154,30 @@ movie_id_name_dict = get_movie_id_name_dict(DoulistFile)
 vectors = load_vectors(VecFile)
 
 if __name__ == '__main__':
-    movie_names = ['小时代', '倩女幽魂', '悟空传', '美国往事', '战狼2']
-    for movie_name in movie_names:
-        topk_like(movie_name, print_log=True)
+    # movie_names = ['小时代', '倩女幽魂', '悟空传', '美国往事', '战狼2']
+    # for movie_name in movie_names:
+    #     topk_like(movie_name, print_log=True)
     #generate_movie_topk_like_result('./output/leancloud_movie_fasttext.json', k=25)
+
+    print(movie_id_name_dict[9006], movie_id_name_dict[7008])
+    # 亚洲丰富的饮食世界、面条之路
+    # 都是记录片
+    # 都是饮食
+
+    l = [19236,14980,7910]
+    # 喜剧、gay
+
+    l = [9301, 10232,5879,20025]
+    # 铁马寻桥 中国香港 / 剧情 / A Fistful of Stances
+    # 900重案追凶 中国香港 / 剧情 / 悬疑 / 惊悚 / 犯罪 / Outburst / 45
+    # 学警出更 中国香港 / 犯罪 / 剧情 / 斗气冤家好兄弟 / 45
+    # 挞出爱火花 中国香港 / AimingHigh / 挞出爱火花
+
+    l = [18023,3869,520,1244]
+    # 女拳霸 泰国 / 动作 / 剧情 / Chocolate / 致命巧克力 / 110分钟
+    # 爱久弥新 泰国 / 剧情 / 爱情 / 爱比记忆更长久 / 爱在黃昏 / 117分钟
+    # 小情人 泰国 / 儿童 / 喜剧 / My Girl / Fan chan / 110分钟
+    # 亲爱的伽利略 泰国 / 剧情 / 爱情 / 与伽利略一起逃亡 / Dear Galileo / 130分钟
+
+    for id in l:
+        print(movie_id_name_dict[id])
